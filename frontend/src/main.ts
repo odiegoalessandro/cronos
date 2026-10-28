@@ -6,6 +6,7 @@ class App implements OnInit,OnDestroy { http=inject(HttpClient); blocks:Block[]=
  ngOnInit(){this.load();} ngOnDestroy(){clearInterval(this.timer);}
  load(){this.http.get<Block[]>('/api/blocks').subscribe(v=>{this.blocks=v.map(b=>({...b,remaining:b.durationMinutes*60}));});}
  get total(){return this.blocks.reduce((a,b)=>a+b.durationMinutes,0)} get remainingTotal(){return this.blocks.reduce((a,b)=>a+(b.remaining??b.durationMinutes*60),0)}
+ get activeBlock():Block|undefined{return this.blocks[this.active];}
  add(){if(!this.name.trim()||this.duration<1)return;this.http.post<Block>('/api/blocks',{name:this.name,durationMinutes:this.duration}).subscribe(()=>{this.name='';this.load();});}
  remove(i:number){if(this.blocks[i].id)this.http.delete('/api/blocks/'+this.blocks[i].id).subscribe(()=>this.load());}
  toggle(){this.paused=!this.paused;if(!this.paused&&!this.timer)this.timer=window.setInterval(()=>this.tick(),1000);}
