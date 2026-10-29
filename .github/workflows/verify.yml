@@ -26,3 +26,7 @@ jobs:
       - run: npm ci --no-audit --no-fund && npm run build
         working-directory: frontend
       - run: docker compose build
+      - run: docker compose up --detach --wait --wait-timeout 60
+      - run: curl --fail --silent --show-error http://localhost:4200
+      - run: docker compose down --volumes
+        if: always()

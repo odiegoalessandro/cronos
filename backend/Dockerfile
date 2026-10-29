@@ -6,9 +6,12 @@ COPY src src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
-RUN addgroup -S cronos && adduser -S cronos -G cronos
+RUN addgroup -S cronos \
+  && adduser -S cronos -G cronos \
+  && apk add --no-cache su-exec
 WORKDIR /app
 COPY --from=build --chown=cronos:cronos /src/target/time-manager-0.0.1.jar app.jar
-USER cronos
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
+ENTRYPOINT ["docker-entrypoint.sh"]
