@@ -20,5 +20,8 @@ public class SqliteMigration implements ApplicationRunner {
 
     if (!columns.contains("remaining_seconds")) jdbc.execute("ALTER TABLE time_block ADD COLUMN remaining_seconds INTEGER NOT NULL DEFAULT 0");
     if (!columns.contains("completed")) jdbc.execute("ALTER TABLE time_block ADD COLUMN completed BOOLEAN NOT NULL DEFAULT 0");
+    if (!columns.contains("spent_seconds")) jdbc.execute("ALTER TABLE time_block ADD COLUMN spent_seconds INTEGER NOT NULL DEFAULT 0");
+    if (!columns.contains("plan_date")) jdbc.execute("ALTER TABLE time_block ADD COLUMN plan_date VARCHAR(10)");
+    jdbc.update("UPDATE time_block SET plan_date = ? WHERE plan_date IS NULL OR plan_date = ''", java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).toString());
   }
 }

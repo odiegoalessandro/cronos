@@ -11,4 +11,6 @@ public class TimerController {
   @PostMapping("/resume") public TimerService.Snapshot resume() { return timer.resume(); }
   @PostMapping("/pause") public TimerService.Snapshot pause() { return timer.pause(); }
   @PostMapping("/activate/{blockId}") public TimerService.Snapshot activate(@PathVariable Long blockId) { return timer.activate(blockId); }
+  @PostMapping("/finish-task/{blockId}") public TimerService.Snapshot finishTask(@PathVariable Long blockId) { return timer.finishTask(blockId); }
+  @PostMapping("/finish-day") public TimerService.Snapshot finishDay() { return timer.finishDay(); }
 }

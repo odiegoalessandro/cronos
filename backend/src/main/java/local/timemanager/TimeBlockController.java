@@ -10,15 +10,13 @@ import java.util.*;
 
 @RestController @RequestMapping("/api/blocks")
 public class TimeBlockController {
-  private final TimeBlockRepository repo;
   private final TimerService timer;
-  public TimeBlockController(TimeBlockRepository repo, TimerService timer){this.repo=repo;this.timer=timer;}
-  @GetMapping public List<TimeBlock> all(){return repo.findAll().stream().sorted(Comparator.comparing(TimeBlock::getPosition)).toList();}
+  public TimeBlockController(TimerService timer){this.timer=timer;}
+  @GetMapping public List<TimeBlock> all(){return timer.snapshot().blocks();}
   @PostMapping public TimeBlock add(@Valid @RequestBody CreateTimeBlock body){
     String name=body.name().trim();
     int minutes=body.durationMinutes();
-    if(repo.findAll().stream().mapToInt(TimeBlock::getDurationMinutes).sum()+minutes>1440) throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,"O limite diário de 24 horas foi excedido");
-    return repo.save(new TimeBlock(name, minutes, (int)repo.count()));
+    try { return timer.add(name, minutes); } catch (IllegalArgumentException | IllegalStateException error) { throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage()); }
   }
   @DeleteMapping("/{id}") public void delete(@PathVariable Long id){timer.delete(id);}
   @PutMapping("/order") public TimerService.Snapshot reorder(@RequestBody ReorderTimeBlocks body){return timer.reorder(body.blockIds());}
