@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import local.timemanager.dto.response.HistoryDayResponse;
+import local.timemanager.dto.response.TimerSnapshotResponse;
 import local.timemanager.entity.DayArchive;
 import local.timemanager.entity.TimeBlock;
 import local.timemanager.entity.TimerState;
@@ -36,7 +38,7 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot snapshot() {
+  public TimerSnapshotResponse snapshot() {
     List<TimeBlock> blocks = currentDayBlocks();
     TimerState state = timerState();
 
@@ -51,7 +53,7 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot resume() {
+  public TimerSnapshotResponse resume() {
     if (isCurrentDayFinished()) {
       return snapshot();
     }
@@ -69,14 +71,14 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot pause() {
+  public TimerSnapshotResponse pause() {
     snapshot();
     pause(timerState());
     return snapshot();
   }
 
   @Transactional
-  public Snapshot activate(Long blockId) {
+  public TimerSnapshotResponse activate(Long blockId) {
     requireOpenDay();
     snapshot();
 
@@ -93,7 +95,7 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot finishTask(Long blockId) {
+  public TimerSnapshotResponse finishTask(Long blockId) {
     snapshot();
 
     TimeBlock block = findCurrentDayBlock(blockId);
@@ -111,7 +113,7 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot finishDay() {
+  public TimerSnapshotResponse finishDay() {
     snapshot();
 
     TimerState state = timerState();
@@ -123,7 +125,7 @@ public class TimerService {
   }
 
   @Transactional
-  public Snapshot reorder(List<Long> blockIds) {
+  public TimerSnapshotResponse reorder(List<Long> blockIds) {
     requireOpenDay();
 
     List<TimeBlock> blocks = currentDayBlocks();
@@ -168,14 +170,14 @@ public class TimerService {
   }
 
   @Transactional
-  public List<HistoryDay> history() {
+  public List<HistoryDayResponse> history() {
     snapshot();
 
     return timeBlocks.findAll().stream()
         .collect(Collectors.groupingBy(TimeBlock::getPlanDate))
         .entrySet().stream()
         .map(this::toHistoryDay)
-        .sorted(Comparator.comparing(HistoryDay::date).reversed())
+        .sorted(Comparator.comparing(HistoryDayResponse::date).reversed())
         .toList();
   }
 
@@ -289,14 +291,19 @@ public class TimerService {
     return LocalDate.now(APPLICATION_ZONE).toString();
   }
 
-  private Snapshot toSnapshot(List<TimeBlock> blocks, TimerState state) {
-    return new Snapshot(blocks, state.getActiveBlockId(), state.isRunning(), currentDate(), isCurrentDayFinished());
+  private TimerSnapshotResponse toSnapshot(List<TimeBlock> blocks, TimerState state) {
+    return new TimerSnapshotResponse(
+        blocks,
+        state.getActiveBlockId(),
+        state.isRunning(),
+        currentDate(),
+        isCurrentDayFinished());
   }
 
-  private HistoryDay toHistoryDay(Map.Entry<String, List<TimeBlock>> entry) {
+  private HistoryDayResponse toHistoryDay(Map.Entry<String, List<TimeBlock>> entry) {
     List<TimeBlock> blocks = entry.getValue();
 
-    return new HistoryDay(
+    return new HistoryDayResponse(
         entry.getKey(),
         blocks.stream().mapToInt(TimeBlock::getDurationMinutes).sum(),
         blocks.stream().mapToInt(TimeBlock::getSpentSeconds).sum() / 60,
@@ -305,15 +312,4 @@ public class TimerService {
         dayArchives.existsById(entry.getKey()));
   }
 
-  public record Snapshot(List<TimeBlock> blocks, Long activeBlockId, boolean running, String date, boolean dayFinished) {
-  }
-
-  public record HistoryDay(
-      String date,
-      int plannedMinutes,
-      int spentMinutes,
-      int completedTasks,
-      int totalTasks,
-      boolean finished) {
-  }
 }

@@ -1,11 +1,10 @@
 package local.timemanager.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import java.util.List;
+import local.timemanager.dto.request.CreateTimeBlockRequest;
+import local.timemanager.dto.request.ReorderTimeBlocksRequest;
+import local.timemanager.dto.response.TimerSnapshotResponse;
 import local.timemanager.entity.TimeBlock;
 import local.timemanager.service.TimerService;
 import org.springframework.http.HttpStatus;
@@ -35,7 +34,7 @@ public class TimeBlockController {
   }
 
   @PostMapping
-  public TimeBlock create(@Valid @RequestBody CreateTimeBlock request) {
+  public TimeBlock create(@Valid @RequestBody CreateTimeBlockRequest request) {
     try {
       return timerService.add(request.name().trim(), request.durationMinutes());
     } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -49,15 +48,8 @@ public class TimeBlockController {
   }
 
   @PutMapping("/order")
-  public TimerService.Snapshot reorder(@RequestBody ReorderTimeBlocks request) {
+  public TimerSnapshotResponse reorder(@RequestBody ReorderTimeBlocksRequest request) {
     return timerService.reorder(request.blockIds());
   }
 
-  public record CreateTimeBlock(
-      @NotBlank @Size(max = 100) String name,
-      @Min(1) @Max(1_440) int durationMinutes) {
-  }
-
-  public record ReorderTimeBlocks(List<Long> blockIds) {
-  }
 }

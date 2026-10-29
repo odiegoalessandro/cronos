@@ -1,6 +1,7 @@
 package local.timemanager.controller;
 
 import java.util.List;
+import local.timemanager.dto.response.HistoryDayResponse;
 import local.timemanager.service.TimerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +18,7 @@ public class HistoryController {
   }
 
   @GetMapping
-  public List<TimerService.HistoryDay> list() {
+  public List<HistoryDayResponse> list() {
     return timerService.history();
   }
 }

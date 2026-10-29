@@ -1,6 +1,7 @@
 package local.timemanager.controller;
 
 import local.timemanager.service.TimerService;
+import local.timemanager.dto.response.TimerSnapshotResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,32 +19,32 @@ public class TimerController {
   }
 
   @GetMapping
-  public TimerService.Snapshot snapshot() {
+  public TimerSnapshotResponse snapshot() {
     return timerService.snapshot();
   }
 
   @PostMapping("/resume")
-  public TimerService.Snapshot resume() {
+  public TimerSnapshotResponse resume() {
     return timerService.resume();
   }
 
   @PostMapping("/pause")
-  public TimerService.Snapshot pause() {
+  public TimerSnapshotResponse pause() {
     return timerService.pause();
   }
 
   @PostMapping("/activate/{blockId}")
-  public TimerService.Snapshot activate(@PathVariable Long blockId) {
+  public TimerSnapshotResponse activate(@PathVariable Long blockId) {
     return timerService.activate(blockId);
   }
 
   @PostMapping("/finish-task/{blockId}")
-  public TimerService.Snapshot finishTask(@PathVariable Long blockId) {
+  public TimerSnapshotResponse finishTask(@PathVariable Long blockId) {
     return timerService.finishTask(blockId);
   }
 
   @PostMapping("/finish-day")
-  public TimerService.Snapshot finishDay() {
+  public TimerSnapshotResponse finishDay() {
     return timerService.finishDay();
   }
 }
