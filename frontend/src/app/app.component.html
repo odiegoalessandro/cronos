@@ -1,0 +1,175 @@
+<main class="app-shell">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">PLANEJAMENTO DIÁRIO</span>
+      <h1>Meu tempo</h1>
+    </div>
+
+    <div class="header-actions">
+      <button
+        class="theme-toggle"
+        type="button"
+        [attr.aria-label]="dark ? 'Usar tema claro' : 'Usar tema escuro'"
+        (click)="toggleTheme()">
+        {{ dark ? '☀' : '◐' }}
+      </button>
+
+      <p class="total-time">
+        {{ totalPlannedMinutes / 60 | number:'1.0-0' }}h
+        <small>de 24h</small>
+      </p>
+    </div>
+  </header>
+
+  <form class="card task-form" (ngSubmit)="addTask()">
+    <label class="visually-hidden" for="task-name">Nova tarefa</label>
+    <input
+      #taskInput
+      id="task-name"
+      [(ngModel)]="taskName"
+      name="task"
+      autocomplete="off"
+      placeholder="O que você vai fazer?"
+      [disabled]="dayFinished">
+
+    <label class="visually-hidden" for="task-duration">Duração em minutos</label>
+    <input
+      id="task-duration"
+      class="duration-input"
+      type="number"
+      [(ngModel)]="durationMinutes"
+      name="duration"
+      min="1"
+      max="1440"
+      [disabled]="dayFinished">
+
+    <span class="duration-label">min</span>
+    <button type="submit" [disabled]="dayFinished">Adicionar</button>
+  </form>
+
+  <nav class="duration-presets" aria-label="Durações rápidas">
+    <button
+      *ngFor="let preset of presets"
+      type="button"
+      [class.selected]="durationMinutes === preset"
+      [disabled]="dayFinished"
+      (click)="selectDuration(preset)">
+      {{ preset < 60 ? preset + ' min' : preset / 60 + 'h' }}
+    </button>
+  </nav>
+
+  <p *ngIf="dayFinished" class="day-closed" role="status">
+    Dia finalizado. O plano está salvo no histórico.
+  </p>
+
+  <section class="card timeline" aria-label="Tarefas do dia">
+    <div class="timeline-line" aria-hidden="true"></div>
+
+    <article
+      *ngFor="let block of blocks; let index = index"
+      class="time-block"
+      [class.current]="index === activeIndex && !paused"
+      [class.done]="block.completed"
+      [class.dragging]="draggedIndex === index"
+      draggable="true"
+      (dragstart)="onDragStart(index, $event)"
+      (dragover)="$event.preventDefault()"
+      (drop)="onDrop(index)">
+      <div class="timeline-dot" aria-hidden="true"></div>
+
+      <div class="block-header">
+        <div class="block-title">
+          <span class="drag-handle" title="Clique e arraste para mudar a prioridade">⠿</span>
+          <div>
+            <h2>{{ block.name }}</h2>
+            <p>{{ block.durationMinutes }} min</p>
+          </div>
+        </div>
+
+        <div class="block-actions">
+          <button
+            class="secondary-action"
+            type="button"
+            [disabled]="dayFinished || block.completed || index === activeIndex"
+            (click)="selectNow(block)">
+            {{ index === activeIndex ? 'Atual' : 'Fazer agora' }}
+          </button>
+
+          <button
+            class="finish-action"
+            type="button"
+            [disabled]="dayFinished || block.completed"
+            (click)="finishTask(block)">
+            Finalizar
+          </button>
+
+          <button
+            class="remove-action"
+            type="button"
+            aria-label="Remover tarefa"
+            [disabled]="dayFinished"
+            (click)="removeTask(index)">
+            ×
+          </button>
+        </div>
+      </div>
+
+      <div class="progress-track" aria-hidden="true">
+        <span
+          class="progress-value"
+          [style.width.%]="block.completed ? 100 : index === activeIndex ? 100 - (block.remainingSeconds / (block.durationMinutes * 60) * 100) : 0">
+        </span>
+      </div>
+
+      <p class="block-time">
+        {{ block.completed ? 'Concluído' : index === activeIndex ? formatDuration(block.remainingSeconds) : formatDuration(block.durationMinutes * 60) }}
+      </p>
+    </article>
+
+    <p *ngIf="!blocks.length" class="empty-state">
+      Digite uma tarefa acima para começar.
+    </p>
+  </section>
+
+  <section class="timer-panel" aria-label="Cronômetro atual">
+    <div>
+      <p class="eyebrow">{{ activeBlock?.name || 'Nenhuma atividade' }}</p>
+      <strong>{{ activeBlock ? formatDuration(activeBlock.remainingSeconds) : '00:00:00' }}</strong>
+    </div>
+
+    <div class="timer-actions">
+      <button
+        class="finish-day-action"
+        type="button"
+        [disabled]="dayFinished"
+        (click)="finishDay()">
+        Finalizar dia
+      </button>
+
+      <button
+        class="timer-toggle"
+        type="button"
+        [disabled]="dayFinished || !activeBlock"
+        (click)="toggleTimer()">
+        {{ paused ? '▶ Continuar' : 'Ⅱ Pausar' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="history" aria-labelledby="history-title">
+    <div class="history-heading">
+      <span class="eyebrow">HISTÓRICO</span>
+      <h2 id="history-title">Dias anteriores</h2>
+    </div>
+
+    <article *ngFor="let day of history" class="history-row">
+      <time [attr.datetime]="day.date">{{ day.date }}</time>
+      <span>{{ day.spentMinutes }} min gastos · {{ day.plannedMinutes }} min planejados</span>
+      <small>{{ day.completedTasks }}/{{ day.totalTasks }} tarefas{{ day.finished ? ' · finalizado' : '' }}</small>
+    </article>
+
+    <p *ngIf="!history.length" class="empty-state">
+      Seu histórico aparecerá aqui.
+    </p>
+  </section>
+</main>
