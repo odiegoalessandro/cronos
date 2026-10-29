@@ -15,7 +15,7 @@ public class TimerState {
   private boolean running;
   private Long resumedAtEpochMs;
 
-  protected TimerState() {
+  public TimerState() {
   }
 
   public Long getActiveBlockId() {
