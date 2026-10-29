@@ -47,6 +47,30 @@ public class TimerService {
   }
 
   @Transactional
+  public Snapshot activate(Long blockId) {
+    snapshot();
+    var block = blocks.findById(blockId).orElseThrow();
+    if (block.isCompleted()) throw new IllegalStateException("Tarefas concluídas não podem ser reativadas");
+    var state = state();
+    state.setActiveBlockId(blockId);
+    state.setRunning(false);
+    state.setResumedAtEpochMs(null);
+    states.save(state);
+    return snapshot();
+  }
+
+  @Transactional
+  public Snapshot reorder(List<Long> blockIds) {
+    var all = orderedBlocks();
+    var existingIds = all.stream().map(TimeBlock::getId).collect(java.util.stream.Collectors.toSet());
+    if (all.size() != blockIds.size() || !existingIds.equals(java.util.Set.copyOf(blockIds))) throw new IllegalArgumentException("A lista de tarefas é inválida");
+    var byId = all.stream().collect(java.util.stream.Collectors.toMap(TimeBlock::getId, block -> block));
+    for (int position = 0; position < blockIds.size(); position++) byId.get(blockIds.get(position)).setPosition(position);
+    blocks.saveAll(all);
+    return snapshot();
+  }
+
+  @Transactional
   public void delete(Long blockId) {
     var state = state();
     if (blockId.equals(state.getActiveBlockId())) {

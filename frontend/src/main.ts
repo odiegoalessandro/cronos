@@ -12,7 +12,7 @@ class App implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('taskInput') taskInput?: ElementRef<HTMLInputElement>;
   readonly http = inject(HttpClient); readonly presets = [15, 30, 45, 60, 90, 120];
   blocks: Block[] = []; name = ''; duration = 60; active = 0; paused = true; dark = false;
-  private timer?: number; private audio?: AudioContext;
+  private timer?: number; private audio?: AudioContext; draggedIndex?: number;
   ngOnInit() { this.dark = localStorage.getItem('cronos-theme') === 'dark'; this.applyTheme(); this.load(); }
   ngAfterViewInit() { this.focusTaskInput(); }
   ngOnDestroy() { this.stopClock(); }
@@ -22,6 +22,9 @@ class App implements OnInit, AfterViewInit, OnDestroy {
   add() { if (!this.name.trim() || this.duration < 1) return; this.http.post<Block>('/api/blocks', {name: this.name.trim(), durationMinutes: this.duration}).subscribe(() => { this.name = ''; this.load(); this.focusTaskInput(); }); }
   remove(index: number) { const block = this.blocks[index]; if (!block?.id) return; this.http.delete(`/api/blocks/${block.id}`).subscribe(() => this.load()); }
   selectDuration(minutes: number) { this.duration = minutes; }
+  selectNow(block: Block) { if (!block.id || block.completed) return; this.http.post<TimerSnapshot>(`/api/timer/activate/${block.id}`, {}).subscribe(snapshot => this.applySnapshot(snapshot)); }
+  onDragStart(index: number, event: DragEvent) { this.draggedIndex = index; event.dataTransfer?.setData('text/plain', String(index)); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }
+  onDrop(index: number) { if (this.draggedIndex === undefined || this.draggedIndex === index) return; const [block] = this.blocks.splice(this.draggedIndex, 1); this.blocks.splice(index, 0, block); this.draggedIndex = undefined; this.http.put<TimerSnapshot>('/api/blocks/order', {blockIds: this.blocks.map(item => item.id)}).subscribe(snapshot => this.applySnapshot(snapshot)); }
   toggle() { if (!this.activeBlock) return; const endpoint = this.paused ? '/api/timer/resume' : '/api/timer/pause'; this.http.post<TimerSnapshot>(endpoint, {}).subscribe(snapshot => { this.applySnapshot(snapshot); this.playTone(this.paused ? 420 : 660, 0.09); }); }
   toggleTheme() { this.dark = !this.dark; localStorage.setItem('cronos-theme', this.dark ? 'dark' : 'light'); this.applyTheme(); }
   private tick() { if (this.paused || !this.activeBlock) return; const remaining = this.activeBlock.remainingSeconds - 1; if (remaining > 0) { this.activeBlock.remainingSeconds = remaining; return; } this.activeBlock.remainingSeconds = 0; this.playCompletionSound(); this.http.post<TimerSnapshot>('/api/timer/pause', {}).subscribe(snapshot => this.applySnapshot(snapshot)); }

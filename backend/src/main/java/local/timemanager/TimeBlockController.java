@@ -21,6 +21,8 @@ public class TimeBlockController {
     return repo.save(new TimeBlock(name, minutes, (int)repo.count()));
   }
   @DeleteMapping("/{id}") public void delete(@PathVariable Long id){timer.delete(id);}
+  @PutMapping("/order") public TimerService.Snapshot reorder(@RequestBody ReorderTimeBlocks body){return timer.reorder(body.blockIds());}
 
   record CreateTimeBlock(@NotBlank @jakarta.validation.constraints.Size(max = 100) String name, @Min(1) @Max(1440) int durationMinutes) {}
+  record ReorderTimeBlocks(List<Long> blockIds) {}
 }
